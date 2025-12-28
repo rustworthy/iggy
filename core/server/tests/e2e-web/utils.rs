@@ -106,7 +106,7 @@ pub(crate) struct IggyContainer {
 /// which keeps the container's handle (whose `Drop` implemention knows how to
 /// clean up) as well as the host port and HTTP url of the Iggy server.
 ///
-/// Note that this relies on the "iggy:local" image to be available, i.e. we need
+/// Note that this relies on the "apache/iggy:local" image to be available, i.e. we need
 /// to build and tag the image prior to running tests which are using this utility.
 /// E.g. with `docker` the image can be built with (from the workspace root):
 ///

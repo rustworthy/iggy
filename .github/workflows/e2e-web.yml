@@ -41,7 +41,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: ubuntu-latest / stable
+    name: Iggy Web UI End-To-End Tests
     env:
       WEBDRIVER_PORT: 4444
     steps:
@@ -51,17 +51,8 @@ jobs:
       # by default Apache Iggy image will have Web UI distribution built as static
       # assets only and embedded (the app will be served same origin), i.e. the image
       # we are building here will incorporate the _current_ edition of Web UI
-      - uses: ./.github/actions/utils/docker-buildx
-        with:
-          task: build
-          platform: linux/amd64
-          component: rust-server
-          # since we are selecting a platform and requesting a dry run, this will
-          # result in an image tagged "apache/iggy:local-amd64" and so we will need
-          # to set the `E2E_TEST_IGGY_IMAGE_TAG` environment variable incorporate
-          # the job below accordingly (by default tests expect "apache/iggy:local")
-          version: local
-          dry_run: true
+      - name: Build Iggy Server (with Web UI embedded)
+        run: docker build -t apache/iggy:local -f core/server/Dockerfile .
       - name: Launch web driver
         run: chromedriver --port=${{ env.WEBDRIVER_PORT}} &
       - name: Setup Rust & system libs
@@ -75,5 +66,4 @@ jobs:
           E2E_TEST: true
           E2E_TEST_HEADLESS: true
           E2E_TEST_WAIT_TIMEOUT: 10
-          E2E_TEST_IGGY_IMAGE_TAG: local-amd64
 
