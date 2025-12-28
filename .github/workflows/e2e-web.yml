@@ -48,32 +48,37 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      # by default Apache Iggy image will have Web UI distribution built as static
-      # assets only and embedded (the app will be served same origin), i.e. the image
-      # we are building here will incorporate the _current_ edition of Web UI
-      - uses: ./.github/actions/utils/docker-buildx
-        with:
-          task: build
-          platform: linux/amd64
-          component: rust-server
-          # since we are selecting a platform and requesting a dry run, this will
-          # result in an image tagged "apache/iggy:local-amd64" and so we will need
-          # to set the `E2E_TEST_IGGY_IMAGE_TAG` environment variable incorporate
-          # the job below accordingly (by default tests expect "apache/iggy:local")
-          version: local
-          dry_run: true
-      - name: Launch web driver
-        run: chromedriver --port=${{ env.WEBDRIVER_PORT}} &
       - name: Setup Rust & system libs
         uses: ./.github/actions/utils/setup-rust-with-cache
         with:
           cache-targets: false
           show-stats: false
+      # since our test server image is built from "runtime-prebuilt", we should
+      # prepare the front-end distribution outselves (for the normal runtime -
+      # a dedicated instruction in the Dockerfile covers this); Iggy Server will
+      # then have Web UI embedded and will serve it same origin
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Prepare Iggy Web UI distribution
+        run: npm --prefix web ci && npm --prefix web run build:static
+      - name: Build Iggy server Docker image
+        uses: ./.github/actions/utils/docker-build-test-server
+        with:
+          # if we decide to change the image name or tag here, let's not forget
+          # to update `E2E_TEST_IGGY_IMAGE_NAME` and `E2E_TEST_IGGY_IMAGE_TAG`
+          # environment variables in step below accordingly
+          image-tag: "apache/iggy:test"
+          profile: "release"
+      - name: Launch web driver
+        run: chromedriver --port=${{ env.WEBDRIVER_PORT}} &
       - name: Run end-to-end tests (in release mode)
         run: cargo test --release --test e2e-web
         env:
           E2E_TEST: true
           E2E_TEST_HEADLESS: true
           E2E_TEST_WAIT_TIMEOUT: 10
-          E2E_TEST_IGGY_IMAGE_TAG: local-amd64
+          E2E_TEST_IGGY_IMAGE_NAME: "apache/iggy"
+          E2E_TEST_IGGY_IMAGE_TAG: "test"
 

@@ -46,7 +46,7 @@ static IGGY_IMAGE_NAME: LazyLock<String> = LazyLock::new(|| {
 static IGGY_IMAGE_TAG: LazyLock<String> = LazyLock::new(|| {
     std::env::var("E2E_TEST_IGGY_IMAGE_TAG")
         .ok()
-        .unwrap_or("local".into())
+        .unwrap_or("test".into())
 });
 
 // On most workstations the wait timeout can actually have a subsecond value for
@@ -106,12 +106,12 @@ pub(crate) struct IggyContainer {
 /// which keeps the container's handle (whose `Drop` implemention knows how to
 /// clean up) as well as the host port and HTTP url of the Iggy server.
 ///
-/// Note that this relies on the "iggy:local" image to be available, i.e. we need
+/// Note that this relies on the "apache/iggy:test" image to be available, i.e. we need
 /// to build and tag the image prior to running tests which are using this utility.
 /// E.g. with `docker` the image can be built with (from the workspace root):
 ///
 /// ```console
-/// docker build -t apache/iggy:local -f core/server/Dockerfile .
+/// docker build -t apache/iggy:test -f core/server/Dockerfile .
 /// ```
 ///
 /// For debugging/inspecting of what is being done here programmatically, you can
@@ -125,7 +125,7 @@ pub(crate) struct IggyContainer {
 ///     -e IGGY_TCP_ENABLED=false \
 ///     -e IGGY_WEBSOCKET_ENABLED=false \
 ///     -e IGGY_QUIC_ENABLED=false \
-///     -p 0:3000 apache/iggy:local
+///     -p 0:3000 apache/iggy:test
 /// ```
 pub(crate) async fn launch_iggy_container() -> IggyContainer {
     let container = GenericImage::new(&*IGGY_IMAGE_NAME, &*IGGY_IMAGE_TAG)
